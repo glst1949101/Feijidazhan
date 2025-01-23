@@ -8,8 +8,8 @@ class Player {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.width = 50;
-        this.height = 50;
+        this.width = 100;
+        this.height = 100;
         this.image = new Image();
         this.image.src = 'player.png';
         this.lives = 3;
@@ -41,8 +41,8 @@ class Enemy {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.width = 50;
-        this.height = 50;
+        this.width = 100;
+        this.height = 100;
         this.image = new Image();
         this.image.src = 'enemy.png';
     }
@@ -104,6 +104,7 @@ function resetGame() {
     shootCooldown = 5;
     isGameOver = false; // 添加: 设置游戏结束标志为false
     gameLoop(); // 添加: 重新启动游戏循环
+
 }
 
 let isGameOver = false; // 添加: 游戏结束标志
@@ -125,7 +126,8 @@ function gameLoop() {
         if (keys[' ']) shootBullet();
     }
 
-    if (Math.random() < 0.02) {
+    // 修改: 增加敌机生成频率
+    if (Math.random() < 0.09) {
         const x = Math.random() * (canvas.width - 50);
         enemies.push(new Enemy(x, 0));
     }
@@ -167,17 +169,73 @@ function gameLoop() {
                 ctx.fillText('Game Over', canvas.width / 2, canvas.height / 2.5);
 
                 // 添加重新开始按钮
-                ctx.strokeStyle = 'white'; // 添加: 设置边框颜色
-                ctx.lineWidth = 3; // 添加: 设置边框宽度
-                ctx.strokeRect(canvas.width / 2 - 200, canvas.height / 2 + 100, 400, 100); // 修改: 放大按钮并调整位置
-                ctx.fillStyle = 'black';
-                ctx.fillRect(canvas.width / 2 - 200, canvas.height / 2 + 100, 400, 100); // 修改: 放大按钮并调整位置
-                ctx.fillStyle = 'white';
                 ctx.font = '60px Arial'; // 修改: 放大字体
-                ctx.fillText('重新开始', canvas.width / 2, canvas.height / 2 + 155); // 修改: 调整文字位置
+                const buttonText = '重新开始';
+                const textWidth = ctx.measureText(buttonText).width;
+                const textHeight = 60; // 字体大小即为文字高度
+                const padding = 20; // 设置内边距
+                const buttonWidth = textWidth + 2 * padding;
+                const buttonHeight = textHeight + 2 * padding;
+                const buttonX = canvas.width / 2 - buttonWidth / 2;
+                const buttonY = canvas.height / 2 + 100;
+
+                ctx.strokeStyle = 'white'; // 添加: 设置边框颜色
+                ctx.lineWidth = 3; // 修改: 设置边框宽度为3
+                ctx.lineJoin = 'round'; // 添加: 设置边框倒圆效果
+                ctx.lineCap = 'round'; // 添加: 设置边框倒圆效果
+
+                function strokeRoundRect(x, y, width, height, radius) {
+                    ctx.beginPath();
+                    ctx.moveTo(x + radius, y);
+                    ctx.lineTo(x + width - radius, y);
+                    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+                    ctx.lineTo(x + width, y + height - radius);
+                    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+                    ctx.lineTo(x + radius, y + height);
+                    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+                    ctx.lineTo(x, y + radius);
+                    ctx.quadraticCurveTo(x, y, x + radius, y);
+                    ctx.closePath();
+                    ctx.stroke();
+                }
+                strokeRoundRect(buttonX, buttonY, buttonWidth, buttonHeight, 10); // 修改: 使用strokeRoundRect绘制倒圆边框
+
+                // 添加白色倒圆填充
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.moveTo(buttonX + 10, buttonY);
+                ctx.lineTo(buttonX + buttonWidth - 10, buttonY);
+                ctx.quadraticCurveTo(buttonX + buttonWidth, buttonY, buttonX + buttonWidth, buttonY + 10);
+                ctx.lineTo(buttonX + buttonWidth, buttonY + buttonHeight - 10);
+                ctx.quadraticCurveTo(buttonX + buttonWidth, buttonY + buttonHeight, buttonX + buttonWidth - 10, buttonY + buttonHeight);
+                ctx.lineTo(buttonX + 10, buttonY + buttonHeight);
+                ctx.quadraticCurveTo(buttonX, buttonY + buttonHeight, buttonX, buttonY + buttonHeight - 10);
+                ctx.lineTo(buttonX, buttonY + 10);
+                ctx.quadraticCurveTo(buttonX, buttonY, buttonX + 10, buttonY);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = 'black';
+                ctx.fillRect(buttonX, buttonY, buttonWidth, buttonHeight); // 修改: 放大按钮并调整位置
+                ctx.fillStyle = 'white';
+                ctx.textBaseline = 'middle'; // 添加: 设置文本垂直居中
+                ctx.fillText(buttonText, canvas.width / 2, buttonY + buttonHeight / 2); // 修改: 调整文字位置以垂直居中
 
                 isGameOver = true; // 添加: 设置游戏结束标志为true
                 canvas.addEventListener('click', restartGame); // 添加: 添加点击事件监听器
+
+                // 添加CSS动画样式
+                const style = document.createElement('style');
+                style.innerHTML = `
+                    @keyframes blink {
+                        50% { opacity: 0.5; }
+                    }
+                    .blink {
+                        animation: blink 1s infinite;
+                    }
+                `;
+                document.head.appendChild(style);
+
                 return;
             }
             break;
@@ -193,18 +251,6 @@ function gameLoop() {
 
     requestAnimationFrame(gameLoop);
 }
-
-// 添加: 添加CSS动画样式
-const style = document.createElement('style');
-style.innerHTML = `
-    @keyframes blink {
-        50% { opacity: 0.5; }
-    }
-    .blink {
-        animation: blink 1s infinite;
-    }
-`;
-document.head.appendChild(style);
 
 function restartGame(event) {
     const rect = canvas.getBoundingClientRect();
